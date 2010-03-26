@@ -3,6 +3,7 @@ from django.template.loader import render_to_string
 from django.contrib.comments.templatetags.comments import BaseCommentNode
 from django.contrib import comments
 from threadedcomments.util import annotate_tree_properties, fill_tree
+from django.conf import settings
 register = template.Library()
 
 class BaseThreadedCommentNode(BaseCommentNode):
@@ -49,10 +50,13 @@ class CommentListNode(BaseThreadedCommentNode):
     handle_token = classmethod(handle_token)
 
     def get_context_value_from_queryset(self, context, qs):
+        related = getattr(settings, 'THREADEDCOMMENTS_SELECT_RELATED', None)
         if self.flat:
             qs = qs.order_by('-submit_date')
         elif self.root_only:
             qs = qs.exclude(parent__isnull=False).order_by('-submit_date')
+        if related:
+            qs = qs.select_related(*related)
         return qs
 
 
